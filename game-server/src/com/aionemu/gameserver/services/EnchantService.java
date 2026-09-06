@@ -235,11 +235,8 @@ public class EnchantService {
 		int oldBuffId = item.getBuffSkill();
 		int newBuffId = 0;
 		if (enchantLevel >= 20) {
-			if (oldBuffId > 0) {
-				newBuffId = oldBuffId;
-			} else {
-				newBuffId = getEquipBuff(item);
-			}
+			// The breakthrough skill is granted once at +20 and retained through subsequent enchantments.
+			newBuffId = oldBuffId != 0 ? oldBuffId : getEquipBuff(item);
 		}
 		if (newBuffId != oldBuffId) {
 			item.setBuffSkill(newBuffId);
@@ -249,10 +246,15 @@ public class EnchantService {
 				if (newBuffId != 0)
 					SkillLearnService.learnTemporarySkill(player, newBuffId, 1);
 			}
+			if (newBuffId != 0) {
+				String skillName = DataManager.SKILL_DATA.getSkillTemplate(newBuffId).getL10n();
+				PacketSendUtility.sendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_ENCHANT(item.getL10n(), enchantLevel, skillName));
+				if (!item.isEquipped())
+					PacketSendUtility.sendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_SKILL_ABLE_EQUIPED(item.getL10n(), skillName));
+			} else {
+				PacketSendUtility.sendPacket(player, SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_DELETE(item.getL10n()));
+			}
 		}
-		if (newBuffId != 0)
-			PacketSendUtility.sendPacket(player,
-				SM_SYSTEM_MESSAGE.STR_MSG_EXCEED_SKILL_ENCHANT(item.getL10n(), enchantLevel, DataManager.SKILL_DATA.getSkillTemplate(newBuffId).getL10n()));
 		if (item.getEnchantEffect() != null) {
 			item.getEnchantEffect().endEffect(player);
 			item.setEnchantEffect(null);
